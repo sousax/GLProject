@@ -1,0 +1,27 @@
+# Dependências para rodar app.py no Streamlit Cloud (ou qualquer venv limpa).
+# O Streamlit Cloud instala automaticamente tudo que estiver aqui a partir
+# deste arquivo na raiz do repositório — sem ele, nada além do Python puro
+# fica disponível (foi o que causou o "ModuleNotFoundError: No module named
+# 'openpyxl'").
+
+# --- interface e núcleo do app -----------------------------------------
+streamlit>=1.38
+pandas>=2.0
+
+# --- leitura/escrita de arquivos -----------------------------------------
+openpyxl>=3.1        # ler/escrever .xlsx (packing list, GL_gerado.xlsx)
+pdfplumber>=0.11      # extrair texto de PDF (invoice_extractor, pdf_splitter)
+pypdf>=5.0            # separar PDFs em lote (pdf_splitter)
+
+# --- OCR de faturas escaneadas (opcional, mas recomendado) ---------------
+# Precisa TAMBÉM do packages.txt (poppler-utils + tesseract-ocr), incluído
+# junto — sem ele, o pdf2image/pytesseract instalam mas falham em tempo de
+# execução por falta dos binários do sistema.
+pdf2image>=1.17
+pytesseract>=0.3.13
+
+# --- motores de IA (opcionais — só usados se --engine claude/gemini/openai) 
+# Deixe comentado se quiser um build mais rápido e não for usar aquele motor.
+anthropic>=0.40
+google-genai>=1.0
+openai>=1.50
