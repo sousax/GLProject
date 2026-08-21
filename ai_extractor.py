@@ -105,7 +105,7 @@ def extract_invoice_ai(pdf_path: str, model: str = DEFAULT_MODEL) -> InvoiceData
 
     response = client.messages.create(
         model=model,
-        max_tokens=4000,
+        max_tokens=16000,
         messages=[
             {
                 "role": "user",
@@ -132,7 +132,12 @@ def extract_invoice_ai(pdf_path: str, model: str = DEFAULT_MODEL) -> InvoiceData
     try:
         data = json.loads(text)
     except json.JSONDecodeError as e:
-        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}")
+        hint = ""
+        if "Unterminated" in str(e) or e.pos > len(text) - 20:
+            hint = (" A resposta do modelo parece ter sido CORTADA no meio (provável "
+                    "limite de tokens de saída atingido — fatura com muitos itens). "
+                    "Se persistir, considere separar essa fatura em partes menores.")
+        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}.{hint}")
         return inv
 
     inv.invoice_number = data.get("invoice_number")

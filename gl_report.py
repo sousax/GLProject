@@ -81,9 +81,11 @@ def build_gl_workbook(
     invoices: List[InvoiceData],
     pl_summaries: Optional[Dict[str, POItemSummary]] = None,
     findings: Optional[List[Finding]] = None,
-    importador: str = "",
-    cnpj: str = "",
-    modal: str = "",
+    importador: str = "ABB ELETRIFICAÇÃO LTDA",
+    cnpj: str = "33.449.988/0001-20",
+    modal: str = "MARITIMO",
+    centro: str = "",
+    incoterm: str = "",
     ncm: str = "",
 ) -> Workbook:
     wb = Workbook()
@@ -100,10 +102,19 @@ def build_gl_workbook(
     _set(ws, "A1", "Resumo para GL", Font(name="Arial", bold=True, size=14))
     ws.merge_cells("A1:D1")
 
+    # incoterm: usa o valor manual se informado; senão, o(s) detectado(s)
+    # automaticamente nas faturas do lote.
+    detected_incoterms = sorted({inv.incoterm for inv in invoices if inv.incoterm})
+    incoterm_final = incoterm.strip() if incoterm and incoterm.strip() else (
+        " / ".join(detected_incoterms) if detected_incoterms else ""
+    )
+
     rows = [
         ("Importador", importador),
         ("CNPJ", cnpj),
         ("Modal", modal),
+        ("Centro", centro),
+        ("Incoterm", incoterm_final),
         ("NCM", _resolve_ncm(invoices, ncm)),
     ]
     r = 3
@@ -111,11 +122,6 @@ def build_gl_workbook(
         _set(ws, f"A{r}", label, LABEL_FONT)
         _set(ws, f"B{r}", val)
         r += 1
-
-    incoterms = sorted({inv.incoterm for inv in invoices if inv.incoterm})
-    _set(ws, f"A{r}", "Incoterm", LABEL_FONT)
-    _set(ws, f"B{r}", " / ".join(incoterms) if incoterms else "")
-    r += 1
 
     currencies = sorted({inv.currency for inv in invoices if inv.currency})
     currency_label = currencies[0] if len(currencies) == 1 else " / ".join(currencies)

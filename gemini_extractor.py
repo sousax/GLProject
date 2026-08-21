@@ -66,6 +66,7 @@ def extract_invoice_gemini(pdf_path: str, model: str = DEFAULT_MODEL) -> Invoice
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             temperature=0,
+            max_output_tokens=16000,
         ),
     )
 
@@ -76,7 +77,12 @@ def extract_invoice_gemini(pdf_path: str, model: str = DEFAULT_MODEL) -> Invoice
     try:
         data = json.loads(text)
     except json.JSONDecodeError as e:
-        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}")
+        hint = ""
+        if "Unterminated" in str(e) or e.pos > len(text) - 20:
+            hint = (" A resposta do modelo parece ter sido CORTADA no meio (provável "
+                    "limite de tokens de saída atingido — fatura com muitos itens). "
+                    "Se persistir, considere separar essa fatura em partes menores.")
+        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}.{hint}")
         return inv
 
     inv.invoice_number = data.get("invoice_number")

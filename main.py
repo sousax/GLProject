@@ -67,9 +67,11 @@ def parse_args():
     )
     p.add_argument("--ai-model", default=None,
                     help="Modelo a usar (padrão: claude-sonnet-5 para Claude, gemini-2.5-flash para Gemini)")
-    p.add_argument("--importador", default="")
-    p.add_argument("--cnpj", default="")
-    p.add_argument("--modal", default="")
+    p.add_argument("--importador", default="ABB ELETRIFICAÇÃO LTDA")
+    p.add_argument("--cnpj", default="33.449.988/0001-20")
+    p.add_argument("--modal", default="MARITIMO")
+    p.add_argument("--centro", default="", help="Centro de custo (opcional, sem valor padrão)")
+    p.add_argument("--incoterm", default="", help="Incoterm manual (opcional; se vazio, usa o(s) detectado(s) nas faturas)")
     p.add_argument("--ncm", default="")
     p.add_argument("--output", default="GL_gerado.xlsx", help="Caminho do Excel de saída")
     return p.parse_args()
@@ -154,7 +156,8 @@ def main():
         wb = build_gl_workbook(
             invoices, pl_summaries, findings,
             importador=args.importador, cnpj=args.cnpj,
-            modal=args.modal, ncm=args.ncm,
+            modal=args.modal, centro=args.centro,
+            incoterm=args.incoterm, ncm=args.ncm,
         )
         wb.save(args.output)
         print(f"\nRelatório GL salvo em: {args.output}")

@@ -106,6 +106,7 @@ def extract_invoice_openai(
         model=model,
         messages=[{"role": "user", "content": content}],
         temperature=0,
+        max_tokens=16000,
         response_format={"type": "json_object"},
     )
 
@@ -116,7 +117,12 @@ def extract_invoice_openai(
     try:
         data = json.loads(text)
     except json.JSONDecodeError as e:
-        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}")
+        hint = ""
+        if "Unterminated" in str(e) or e.pos > len(text) - 20:
+            hint = (" A resposta do modelo parece ter sido CORTADA no meio (provável "
+                    "limite de tokens de saída atingido — fatura com muitos itens). "
+                    "Se persistir, considere separar essa fatura em partes menores.")
+        inv.warnings.append(f"Falha ao interpretar JSON retornado pelo modelo: {e}.{hint}")
         return inv
 
     inv.invoice_number = data.get("invoice_number")

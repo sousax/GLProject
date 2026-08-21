@@ -303,26 +303,6 @@ sinalizado como aviso na aba Validação, pra você conferir).
 Com essas correções, o teste no lote de 34 faturas da ABB S.p.A. foi de
 **0/34** para **34/34** faturas com valor total capturado corretamente.
 
-## Adaptando o motor `regex` para o layout de um fornecedor específico
-
-## Adaptando o motor `regex` para o layout de um fornecedor específico
-
-As faturas de exemplo seguem o layout padrão ABB (rótulos em inglês tipo
-`Invoice number`, `Customer's PO`, `Terms of payment`, `Final amount incl. VAT`).
-Se seus fornecedores usam outro layout, os pontos a ajustar são:
-
-- `INVOICE_NUMBER_PATTERNS`, `CUSTOMER_PO_PATTERNS`, `TOTAL_VALUE_PATTERNS`,
-  `LINE_ITEM_PATTERNS`, `HS_CODE_PATTERNS`, `PO_LINE_PATTERNS` no topo de
-  `invoice_extractor.py` — cada um é uma LISTA de padrões tentados em ordem;
-  basta adicionar mais um item na lista para cobrir mais um layout.
-- `COLUMN_ALIASES` no topo de `packing_list_extractor.py` — os nomes de
-  coluna aceitos na packing list (o script já procura o cabeçalho
-  automaticamente, então a aba não precisa começar sempre na mesma linha).
-
-Um jeito rápido de testar novos regex: rode
-`python -c "import pdfplumber; print(pdfplumber.open('sua_fatura.pdf').pages[0].extract_text())"`
-e ajuste os padrões olhando o texto real extraído.
-
 ## PDFs em lote (várias faturas num único arquivo)
 
 Alguns exports de ERP (foi o caso testado com um export da ABB S.p.A. — 34
@@ -351,6 +331,55 @@ Se o seu fornecedor não usa nenhum desses padrões, o PDF é tratado como uma
 fatura só (comportamento normal) — ajuste `INVOICE_NUMBER_PATTERNS` /
 `PAGE_COUNTER_PATTERNS` no topo de `pdf_splitter.py` se precisar reconhecer
 outro padrão.
+
+### JSON truncado mesmo numa fatura só (CI&PL grande)
+
+Mesmo sem ser um PDF em lote, uma fatura combinada com packing list (CI&PL)
+com bastante item pode gerar uma resposta de IA grande o suficiente pra
+estourar um limite de tokens de saída baixo demais. Isso já aconteceu com
+`max_tokens=4000` no motor Claude; o limite dos três motores (Claude,
+Gemini, OpenAI-compatível) foi aumentado para `16000`. Se ainda assim
+truncar em faturas muito grandes, o aviso agora deixa isso explícito
+("resposta do modelo parece ter sido CORTADA") em vez de só mostrar o erro
+cru de JSON inválido — nesse caso, considere separar a fatura em partes
+menores antes de extrair.
+
+## Dados fixos do GL (Importador / CNPJ / Modal / Centro / Incoterm / NCM)
+
+O bloco de cabeçalho do relatório (`GL`, linhas 2-7) tem seis campos, todos
+editáveis mas com valor padrão pra agilizar o dia a dia:
+
+| Campo | Padrão | Origem |
+|---|---|---|
+| Importador | `ABB ELETRIFICAÇÃO LTDA` | fixo |
+| CNPJ | `33.449.988/0001-20` | fixo |
+| Modal | `MARITIMO` | fixo |
+| Centro | (vazio) | manual — sem padrão definido |
+| Incoterm | detectado automaticamente nas faturas | manual sobrescreve, se preenchido |
+| NCM | detectado automaticamente (HS code das faturas) | manual sobrescreve/complementa, se preenchido |
+
+No `app.py` esses campos ficam na barra lateral, em "Dados do GL". No
+`main.py`, use `--importador`, `--cnpj`, `--modal`, `--centro`,
+`--incoterm` e `--ncm` (todos opcionais — os três primeiros já vêm com o
+padrão acima se você não passar nada).
+
+## Adaptando o motor `regex` para o layout de um fornecedor específico
+
+As faturas de exemplo seguem o layout padrão ABB (rótulos em inglês tipo
+`Invoice number`, `Customer's PO`, `Terms of payment`, `Final amount incl. VAT`).
+Se seus fornecedores usam outro layout, os pontos a ajustar são:
+
+- `INVOICE_NUMBER_PATTERNS`, `CUSTOMER_PO_PATTERNS`, `TOTAL_VALUE_PATTERNS`,
+  `LINE_ITEM_PATTERNS`, `HS_CODE_PATTERNS`, `PO_LINE_PATTERNS` no topo de
+  `invoice_extractor.py` — cada um é uma LISTA de padrões tentados em ordem;
+  basta adicionar mais um item na lista para cobrir mais um layout.
+- `COLUMN_ALIASES` no topo de `packing_list_extractor.py` — os nomes de
+  coluna aceitos na packing list (o script já procura o cabeçalho
+  automaticamente, então a aba não precisa começar sempre na mesma linha).
+
+Um jeito rápido de testar novos regex: rode
+`python -c "import pdfplumber; print(pdfplumber.open('sua_fatura.pdf').pages[0].extract_text())"`
+e ajuste os padrões olhando o texto real extraído.
 
 ## Limitações conhecidas
 

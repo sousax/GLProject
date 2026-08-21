@@ -89,11 +89,15 @@ else:
     provider_order = PROVIDERS
 
 st.sidebar.divider()
-st.sidebar.subheader("Dados do GL (opcional)")
-importador = st.sidebar.text_input("Importador", "")
-cnpj = st.sidebar.text_input("CNPJ", "")
-modal = st.sidebar.text_input("Modal", "")
-ncm = st.sidebar.text_input("NCM", "")
+st.sidebar.subheader("Dados do GL")
+importador = st.sidebar.text_input("Importador", "ABB ELETRIFICAÇÃO LTDA")
+cnpj = st.sidebar.text_input("CNPJ", "33.449.988/0001-20")
+modal = st.sidebar.text_input("Modal", "MARITIMO")
+centro = st.sidebar.text_input("Centro", "")
+incoterm_manual = st.sidebar.text_input(
+    "Incoterm (deixe em branco para usar o detectado automaticamente na fatura)", ""
+)
+ncm = st.sidebar.text_input("NCM (deixe em branco para usar o detectado automaticamente)", "")
 
 # ------------------------------------------------------------------ Corpo
 st.title("📦 Automação de envio de GL")
@@ -203,7 +207,8 @@ if process:
         # -------------------------------------------------------- gera Excel
         wb = build_gl_workbook(
             invoices, pl_summaries, findings,
-            importador=importador, cnpj=cnpj, modal=modal, ncm=ncm,
+            importador=importador, cnpj=cnpj, modal=modal,
+            centro=centro, incoterm=incoterm_manual, ncm=ncm,
         )
         buf = BytesIO()
         wb.save(buf)
